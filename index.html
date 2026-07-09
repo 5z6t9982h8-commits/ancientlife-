@@ -75,7 +75,7 @@ body{
     padding-right:env(safe-area-inset-right);
   }
   .stage{padding-bottom:max(5rem, calc(4rem + env(safe-area-inset-bottom)));}
-  .status-bar{top:env(safe-area-inset-top);}
+  .top-hud{top:env(safe-area-inset-top);}
 }
 
 /* ---------- 起始畫面 ---------- */
@@ -123,12 +123,15 @@ body{
 .btn:disabled:hover{background:transparent;color:var(--cinnabar);box-shadow:none;}
 
 /* ---------- 狀態列 ---------- */
-.status-bar{
+/* ---------- 置頂資訊列 ---------- */
+.top-hud{
   position:sticky;top:0;z-index:20;
   margin-top:1.6rem;
+}
+.status-bar{
   display:flex;flex-wrap:wrap;gap:0;
   border:1px solid var(--line);
-  background:rgba(239,231,211,.96);
+  background:rgba(239,231,211,.97);
   backdrop-filter:blur(3px);
   box-shadow:0 3px 12px rgba(43,38,32,.12);
 }
@@ -144,8 +147,12 @@ body{
 
 /* ---------- 存檔工具列 ---------- */
 .toolbar{
-  display:flex;align-items:center;gap:.6rem;
-  margin-top:.6rem;justify-content:flex-end;
+  display:flex;align-items:center;gap:.6rem;justify-content:flex-end;
+  border:1px solid var(--line);border-top:none;
+  background:rgba(239,231,211,.97);
+  backdrop-filter:blur(3px);
+  box-shadow:0 3px 12px rgba(43,38,32,.12);
+  padding:.4rem .7rem;
 }
 .toolbar .save-info{
   margin-right:auto;font-size:.72rem;color:var(--ink-soft);letter-spacing:.1em;
@@ -332,7 +339,7 @@ footer{
 /* ---------- 頭像卡片 ---------- */
 .card-body{display:flex;gap:1rem;align-items:flex-start;}
 .card .avatar{
-  flex:0 0 96px;width:96px;height:96px;position:relative;
+  flex:0 0 112px;width:112px;height:112px;position:relative;
   border-radius:50%;overflow:hidden;
 }
 .card .avatar svg{width:100%;height:100%;display:block;}
@@ -341,6 +348,7 @@ footer{
   opacity:0;transition:opacity .8s ease;
 }
 .card .avatar img.ready{opacity:1;}
+.card .avatar.has-img{cursor:zoom-in;}
 .card .avatar.loading::after{
   content:"";position:absolute;inset:0;border-radius:50%;
   border:2px solid transparent;border-top-color:var(--cinnabar);
@@ -348,7 +356,26 @@ footer{
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 .card dl{flex:1;}
-@media (max-width:420px){.card .avatar{flex-basis:80px;width:80px;height:80px;}}
+@media (max-width:420px){.card .avatar{flex-basis:96px;width:96px;height:96px;}}
+
+/* ---------- 畫像大圖 ---------- */
+.lightbox{
+  position:fixed;inset:0;z-index:99;
+  background:rgba(24,20,16,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1rem;padding:1.4rem;cursor:zoom-out;
+  animation:fadein .25s ease;
+}
+@keyframes fadein{from{opacity:0;}to{opacity:1;}}
+.lightbox img{
+  max-width:min(92vw,640px);max-height:72vh;
+  border:3px solid #f4e9d8;box-shadow:0 8px 40px rgba(0,0,0,.5);
+  background:#e9dfc8;
+}
+.lightbox .lb-name{
+  color:#f4e9d8;font-size:1.15rem;letter-spacing:.4em;text-indent:.4em;
+}
+.lightbox .lb-tip{color:rgba(244,233,216,.55);font-size:.75rem;letter-spacing:.15em;}
 
 /* ---------- 命終 ---------- */
 .death-panel{
@@ -426,23 +453,23 @@ footer{
   </section>
 
 
-  <!-- 狀態列 -->
-  <div id="statusBar" class="status-bar hidden">
-    <div class="cell"><span class="k">時間</span><span class="v" id="st-time">—</span></div>
-    <div class="cell"><span class="k">地點</span><span class="v" id="st-place">—</span></div>
-    <div class="cell"><span class="k">年齡</span><span class="v" id="st-age">—</span></div>
-    <div class="cell"><span class="k">身分</span><span class="v" id="st-identity">—</span></div>
-    <div class="cell"><span class="k">權勢</span><span class="v" id="st-power">—</span></div>
-    <div class="cell"><span class="k">金錢</span><span class="v" id="st-money">—</span></div>
-  </div>
-
-  <!-- 存檔工具列 -->
-  <div id="toolbar" class="toolbar hidden">
-    <span class="save-info" id="saveInfo">進度自動存於此裝置</span>
-    <button type="button" class="mini-btn" id="audioBtn" title="音效開關">音</button>
-    <input type="range" id="volSlider" min="0" max="100" value="60" aria-label="音量">
-    <button type="button" class="mini-btn" id="saveBtn">存檔</button>
-    <button type="button" class="mini-btn danger" id="wipeBtn">除檔</button>
+  <!-- 置頂資訊列（狀態＋存檔工具，捲動時固定） -->
+  <div class="top-hud">
+    <div id="statusBar" class="status-bar hidden">
+      <div class="cell"><span class="k">時間</span><span class="v" id="st-time">—</span></div>
+      <div class="cell"><span class="k">地點</span><span class="v" id="st-place">—</span></div>
+      <div class="cell"><span class="k">年齡</span><span class="v" id="st-age">—</span></div>
+      <div class="cell"><span class="k">身分</span><span class="v" id="st-identity">—</span></div>
+      <div class="cell"><span class="k">權勢</span><span class="v" id="st-power">—</span></div>
+      <div class="cell"><span class="k">金錢</span><span class="v" id="st-money">—</span></div>
+    </div>
+    <div id="toolbar" class="toolbar hidden">
+      <span class="save-info" id="saveInfo">進度自動存於此裝置</span>
+      <button type="button" class="mini-btn" id="audioBtn" title="音效開關">音</button>
+      <input type="range" id="volSlider" min="0" max="100" value="60" aria-label="音量">
+      <button type="button" class="mini-btn" id="saveBtn">存檔</button>
+      <button type="button" class="mini-btn danger" id="wipeBtn">除檔</button>
+    </div>
   </div>
 
 
@@ -636,7 +663,20 @@ function portraitURL(c, isPlayer){
   const desc = c.img ? c.img : (who + ", " + String(c.identity||"") + ", " + String(c.appearance||"").slice(0,60));
   const prompt = desc + ", ancient chinese, hanfu, beautiful anime style illustration, delicate detailed lineart, soft dreamy light, elegant, upper body portrait, masterpiece";
   return "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt) +
-         "?width=512&height=512&nologo=true&seed=" + c.imgSeed;
+         "?width=1024&height=1024&nologo=true&seed=" + c.imgSeed;
+}
+function openLightbox(src, name){
+  const lb = document.createElement("div");
+  lb.className = "lightbox";
+  const img = document.createElement("img");
+  img.src = src; img.alt = name || "";
+  const cap = document.createElement("div");
+  cap.className = "lb-name"; cap.textContent = name || "";
+  const tip = document.createElement("div");
+  tip.className = "lb-tip"; tip.textContent = "點擊任意處關閉";
+  lb.appendChild(img); lb.appendChild(cap); lb.appendChild(tip);
+  lb.addEventListener("click", ()=>lb.remove());
+  document.body.appendChild(lb);
 }
 function attachPortrait(av, c, isPlayer){
   try{
@@ -647,11 +687,16 @@ function attachPortrait(av, c, isPlayer){
     const done = ok => {
       if(doneFlag) return; doneFlag = true;
       av.classList.remove("loading");
-      if(ok){ av.appendChild(img); requestAnimationFrame(()=>img.classList.add("ready")); }
+      if(ok){
+        av.appendChild(img);
+        requestAnimationFrame(()=>img.classList.add("ready"));
+        av.classList.add("has-img");
+        av.addEventListener("click", ()=>openLightbox(img.src, c.name));
+      }
     };
     img.onload = ()=>done(true);
     img.onerror = ()=>done(false);
-    setTimeout(()=>done(false), 45000);
+    setTimeout(()=>done(false), 60000);
     img.src = portraitURL(c, isPlayer);
   }catch(_){ av.classList.remove("loading"); }
 }
