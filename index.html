@@ -377,6 +377,62 @@ footer{
 }
 .lightbox .lb-tip{color:rgba(244,233,216,.55);font-size:.75rem;letter-spacing:.15em;}
 
+/* ---------- 角色卡更新標籤 ---------- */
+.card.updated .card-tag{background:var(--gold);}
+
+/* ---------- 人物名冊 ---------- */
+.roster-panel{
+  position:fixed;inset:0;z-index:90;overflow-y:auto;
+  background:
+    repeating-linear-gradient(0deg, rgba(43,38,32,.014) 0 2px, transparent 2px 4px),
+    var(--paper);
+  padding:calc(env(safe-area-inset-top, 0px) + .8rem) 1rem calc(env(safe-area-inset-bottom, 0px) + 2rem);
+}
+.roster-head{
+  display:flex;align-items:center;justify-content:space-between;
+  max-width:860px;margin:0 auto 1.2rem;
+  border-bottom:1px solid var(--line);padding-bottom:.6rem;
+  position:sticky;top:0;background:var(--paper);z-index:2;
+}
+.roster-tabs{display:flex;gap:0;}
+.rtab{
+  font-family:inherit;cursor:pointer;
+  border:1px solid var(--line);background:transparent;color:var(--ink-soft);
+  font-size:.95rem;letter-spacing:.2em;text-indent:.2em;padding:.45rem 1.4rem;
+}
+.rtab + .rtab{border-left:none;}
+.rtab.active{background:var(--cinnabar);border-color:var(--cinnabar);color:#f4e9d8;}
+.roster-body{max-width:860px;margin:0 auto;}
+.roster-empty{text-align:center;color:var(--ink-soft);font-size:.9rem;letter-spacing:.15em;padding:3rem 0;}
+
+/* ---------- 族譜 ---------- */
+.tree{display:flex;flex-direction:column;align-items:center;padding:1rem 0 2rem;}
+.tree .tier{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem;
+  width:100%;
+}
+.tree .tier-label{
+  font-size:.72rem;color:var(--gold);letter-spacing:.4em;text-indent:.4em;
+  margin:0 0 .5rem;text-align:center;width:100%;
+}
+.tree .link{width:1px;height:26px;background:var(--line);margin:.4rem 0;}
+.chip{
+  border:1px solid var(--line);
+  background:linear-gradient(160deg, rgba(255,252,243,.7), rgba(229,218,191,.5));
+  padding:.5rem .9rem .55rem;min-width:96px;text-align:center;position:relative;
+}
+.chip .role{
+  display:inline-block;font-size:.68rem;letter-spacing:.25em;text-indent:.25em;
+  color:#f4e9d8;background:var(--jade);padding:.06rem .5rem;margin-bottom:.25rem;
+}
+.chip.spouse .role{background:var(--cinnabar);}
+.chip.me{border-color:var(--cinnabar);outline:1px solid var(--cinnabar);outline-offset:3px;}
+.chip.me .role{background:var(--cinnabar);}
+.chip.dead{opacity:.55;}
+.chip.dead .name::after{content:"（歿）";font-size:.7em;color:var(--ink-soft);}
+.chip .name{font-size:1rem;letter-spacing:.12em;color:var(--ink);}
+.chip .cnote{display:block;font-size:.7rem;color:var(--ink-soft);margin-top:.15rem;max-width:150px;}
+
 /* ---------- 命終 ---------- */
 .death-panel{
   margin:2rem 0;border:1px solid var(--ink);outline:1px solid var(--ink);outline-offset:4px;
@@ -465,6 +521,7 @@ footer{
     </div>
     <div id="toolbar" class="toolbar hidden">
       <span class="save-info" id="saveInfo">進度自動存於此裝置</span>
+      <button type="button" class="mini-btn" id="peopleBtn" title="人物名冊">☰ 人物</button>
       <button type="button" class="mini-btn" id="audioBtn" title="音效開關">音</button>
       <input type="range" id="volSlider" min="0" max="100" value="60" aria-label="音量">
       <button type="button" class="mini-btn" id="saveBtn">存檔</button>
@@ -507,6 +564,19 @@ footer{
 
 <footer>浮生若夢・為歡幾何</footer>
 
+<!-- 人物名冊面板 -->
+<div id="rosterPanel" class="roster-panel hidden" role="dialog" aria-label="人物名冊">
+  <div class="roster-head">
+    <div class="roster-tabs">
+      <button type="button" class="rtab active" data-tab="people">人　物</button>
+      <button type="button" class="rtab" data-tab="family">家　室</button>
+    </div>
+    <button type="button" class="mini-btn" id="rosterClose">✕ 關閉</button>
+  </div>
+  <div id="rosterPeople" class="roster-body"></div>
+  <div id="rosterFamily" class="roster-body hidden"></div>
+</div>
+
 <script>
 (function(){
 "use strict";
@@ -529,11 +599,18 @@ const RULES = `你是「架空中式古代人生模擬遊戲」的說書人兼�
 
 【格式】你的回覆「只能」依序輸出下列標籤區塊，不得有任何標籤外的文字或 Markdown：
 <meta>{"time":"大雍景和三年・春","place":"地點","age":"十六","identity":"身分","power":3,"money":1200,"mood":"平靜","death":false}</meta>
-<card>{"player":true,"name":"姓名","gender":"男或女","ageGroup":"幼/少/青/老","identity":"身分","age":"年齡","appearance":"外貌","strengths":"優勢","weaknesses":"劣勢","traits":"特點","img":"英文繪圖提示詞（描述此人外貌供AI繪像，如 a delicate teenage girl with silver butterfly hairpin, pale skin, hanfu）"}</card>
+<card>{"player":true,"name":"姓名","gender":"男或女","ageGroup":"幼/少/青/老","identity":"身分","age":"年齡","appearance":"外貌","strengths":"優勢","weaknesses":"劣勢","traits":"特點","relation":"與主角的關係（主角本人填「本人」）","img":"英文繪圖提示詞（描述此人外貌供AI繪像，如 a delicate teenage girl with silver butterfly hairpin, pale skin, hanfu）"}</card>
+<update>{"name":"既有人物姓名","ageGroup":"新階段","age":"新年齡","identity":"新身分","appearance":"新外貌","relation":"新關係","img":"新的英文繪像提示","note":"一句話說明變化（如：十年過去，容顏漸老）"}</update>
+<family>[{"name":"姓名","role":"父/母/夫/妻/妾/子/女/兄/弟/姊/妹/祖父/祖母","age":"年齡","note":"補充（歿者註明「歿」）"}]</family>
 <story>四百至五百字劇情純文字，段落之間空一行</story>
 <choices>["選項一","選項二","選項三"]</choices>
 
-規則補充：<card> 可有多個（玩家卡僅第一回合且 player:true；新人物 player:false）；無新人物則不輸出 <card>。選項三至四個，須有取捨（穩妥／冒險／代價）。玩家死亡時 <meta> 中 death 設 true、mood 設悲傷，<story> 寫終章，<choices> 輸出 []。所有內容繁體中文，數字不加引號。`;
+規則補充：
+・<card> 僅供「首次出場」人物（玩家卡僅第一回合且 player:true）；每張卡都必須有 relation 與 img。
+・任何已出場人物（包含主角自己）的年齡階段（幼→少→青→老）改變、容貌大變或與主角關係轉變時，「必須」輸出 <update>，其中 ageGroup 改變時務必同時給新的 appearance 與 img（反映年齡的容貌）。無變化則不輸出。
+・主角的家室有任何變動（成親、納妾、生兒育女、親人亡故）時，輸出「完整的」最新 <family> 清單；亡故親人仍保留於清單、note 註明「歿」；無變動則不輸出。
+・順序固定：meta → card(可多) → update(可多) → family → story → choices。無該項則略過。
+・選項三至四個，須有取捨（穩妥／冒險／代價）。玩家死亡時 <meta> 中 death 設 true、mood 設悲傷，<story> 寫終章，<choices> 輸出 []。所有內容繁體中文，數字不加引號。`;
 
 /* ================= 基本狀態 ================= */
 const HOSTED = /claude/i.test(location.hostname);
@@ -701,19 +778,54 @@ function attachPortrait(av, c, isPlayer){
   }catch(_){ av.classList.remove("loading"); }
 }
 
+/* ================= 人物名冊 ================= */
+let roster = { playerName:null, chars:{}, family:[] };
+function resetRoster(){ roster = { playerName:null, chars:{}, family:[] }; }
+function stageOf(c){ return ageGroupOf(c); }
+function registerCard(c, isPlayer){
+  if(!c || !c.name) return;
+  if(!c.imgSeed) c.imgSeed = hashStr((c.name||"") + "浮生錄") % 100000;
+  roster.chars[c.name] = Object.assign({}, roster.chars[c.name]||{}, c);
+  if(isPlayer){ roster.playerName = c.name; roster.chars[c.name].relation = "本人"; roster.chars[c.name].player = true; }
+}
+function applyUpdate(u){
+  if(!u || !u.name) return null;
+  const old = roster.chars[u.name];
+  if(!old){ // 未登錄過就當新人物
+    registerCard(u, false);
+    return { card: roster.chars[u.name], stageChanged: true, note: u.note };
+  }
+  const before = stageOf(old);
+  const merged = Object.assign({}, old);
+  ["ageGroup","age","identity","appearance","relation","img","gender","strengths","weaknesses","traits"].forEach(k=>{
+    if(u[k] !== undefined && u[k] !== null && u[k] !== "") merged[k] = u[k];
+  });
+  roster.chars[u.name] = merged;
+  const stageChanged = stageOf(merged) !== before || !!u.img;
+  return { card: merged, stageChanged: stageChanged, note: u.note };
+}
+
 /* ================= 卡片 / 劇情 ================= */
-function makeCard(c, isPlayer){
+function makeCard(c, isPlayer, tagText){
   const card = document.createElement("div");
   card.className = "card" + (isPlayer ? " player" : "");
   const rows = [["身分",c.identity],["年齡",c.age],["外貌",c.appearance],["優勢",c.strengths],["劣勢",c.weaknesses],["特點",c.traits]];
+  if(c.relation && !isPlayer) rows.unshift(["關係",c.relation]);
   card.innerHTML =
-    '<span class="card-tag">' + (isPlayer ? "我的角色卡" : "新登場人物") + '</span>' +
+    '<span class="card-tag">' + (tagText || (isPlayer ? "我的角色卡" : "新登場人物")) + '</span>' +
     '<h3></h3><div class="card-body"><div class="avatar">' + avatarSVG(c,isPlayer) + '</div><dl>' +
     rows.map(r=>'<dt>'+r[0]+'</dt><dd class="dd"></dd>').join("") + '</dl></div>';
   card.querySelector("h3").textContent = c.name || "無名氏";
   const dds = card.querySelectorAll(".dd");
   rows.forEach((r,i)=>{ dds[i].textContent = r[1] || "—"; });
   attachPortrait(card.querySelector(".avatar"), c, isPlayer);
+  return card;
+}
+function makeUpdateCard(res){
+  const c = res.card;
+  const isPlayer = c.name === roster.playerName;
+  const card = makeCard(c, isPlayer, "角色卡更新" + (res.note ? "・" + res.note : ""));
+  card.classList.add("updated");
   return card;
 }
 
@@ -732,8 +844,10 @@ function renderTurn(p){ // 供還原存檔使用（即時全量渲染）
   updateStatus(p.status);
   const turn = document.createElement("div");
   turn.className = "turn";
-  if(p.playerCard && p.playerCard.name) turn.appendChild(makeCard(p.playerCard, true));
-  (p.newCharacters||[]).forEach(c=>{ if(c && c.name) turn.appendChild(makeCard(c,false)); });
+  if(p.playerCard && p.playerCard.name){ registerCard(p.playerCard, true); turn.appendChild(makeCard(roster.chars[p.playerCard.name], true)); }
+  (p.newCharacters||[]).forEach(c=>{ if(c && c.name){ registerCard(c,false); turn.appendChild(makeCard(roster.chars[c.name],false)); } });
+  (p.updates||[]).forEach(u=>{ const res = applyUpdate(u); if(res) turn.appendChild(makeUpdateCard(res)); });
+  if(Array.isArray(p.family)) roster.family = p.family;
   buildStoryDom(turn, p.story);
   scrollArea.appendChild(turn);
   showChoices(p);
@@ -783,7 +897,7 @@ function createLiveTurn(){
   let mode = "head";       // head | story | post
   let storyEl = null, curP = null, cursor = null;
   let nl = 0;
-  const data = {status:null, playerCard:null, newCharacters:[], story:"", choices:[], raw:""};
+  const data = {status:null, playerCard:null, newCharacters:[], updates:[], family:null, story:"", choices:[], raw:""};
 
   function ensureStory(){
     if(!storyEl){
@@ -826,13 +940,38 @@ function createLiveTurn(){
         try{
           const c = JSON.parse(mCard[1]);
           if(c && c.name){
-            if(c.player){ data.playerCard = c; turn.appendChild(makeCard(c,true)); }
-            else{ data.newCharacters.push(c); turn.appendChild(makeCard(c,false)); }
+            registerCard(c, !!c.player);
+            const reg = roster.chars[c.name];
+            if(c.player){ data.playerCard = reg; turn.appendChild(makeCard(reg,true)); }
+            else{ data.newCharacters.push(reg); turn.appendChild(makeCard(reg,false)); }
             if(!restoring) turn.scrollIntoView({behavior:"smooth", block:"start"});
           }
         }catch(_){}
         pending = pending.slice(mCard.index + mCard[0].length);
         setProg(Math.min(30, progNow+8)); continue;
+      }
+      const mUpd = pending.match(/<update>([\s\S]*?)<\/update>/);
+      if(mUpd){
+        try{
+          const u = JSON.parse(mUpd[1]);
+          const res = applyUpdate(u);
+          if(res){
+            data.updates.push(u);
+            turn.appendChild(makeUpdateCard(res));
+            if(!restoring) turn.scrollIntoView({behavior:"smooth", block:"start"});
+          }
+        }catch(_){}
+        pending = pending.slice(mUpd.index + mUpd[0].length);
+        continue;
+      }
+      const mFam = pending.match(/<family>([\s\S]*?)<\/family>/);
+      if(mFam){
+        try{
+          const f = JSON.parse(mFam[1]);
+          if(Array.isArray(f)){ data.family = f; roster.family = f; }
+        }catch(_){}
+        pending = pending.slice(mFam.index + mFam[0].length);
+        continue;
       }
       const iStory = pending.indexOf("<story>");
       if(iStory !== -1){
@@ -1088,7 +1227,7 @@ async function callClaude(userText){
       }
       setProg(100);
       history.push({role:"assistant", content:parsed.raw});
-      const record = {status:parsed.status, playerCard:parsed.playerCard, newCharacters:parsed.newCharacters, story:parsed.story, choices:parsed.choices};
+      const record = {status:parsed.status, playerCard:parsed.playerCard, newCharacters:parsed.newCharacters, updates:parsed.updates, family:parsed.family, story:parsed.story, choices:parsed.choices};
       turns.push({t:"turn", p:record});
       dead = !!(parsed.status && parsed.status.death);
       autoSave();
@@ -1105,7 +1244,7 @@ async function callClaude(userText){
           try{
             const parsed = live.finish();
             history.push({role:"assistant", content:parsed.raw});
-            const record = {status:parsed.status, playerCard:parsed.playerCard, newCharacters:parsed.newCharacters, story:parsed.story, choices:parsed.choices};
+            const record = {status:parsed.status, playerCard:parsed.playerCard, newCharacters:parsed.newCharacters, updates:parsed.updates, family:parsed.family, story:parsed.story, choices:parsed.choices};
             turns.push({t:"turn", p:record});
             dead = !!(parsed.status && parsed.status.death);
             autoSave();
@@ -1227,6 +1366,7 @@ function restoreGame(save){
     if(history.length && history[history.length-1].role==="user") history.pop();
   }
   scrollArea.innerHTML = "";
+  resetRoster();
   restoring = true;
   turns.forEach(item=>{
     if(item.t==="say"){
@@ -1260,6 +1400,105 @@ function segValue(key){
   const el = document.querySelector('.seg-group[data-key="'+key+'"] .seg.active');
   return el ? el.dataset.v : "隨機";
 }
+
+/* ================= 人物名冊面板 ================= */
+function buildPeopleTab(){
+  const box = $("rosterPeople");
+  box.innerHTML = "";
+  const names = Object.keys(roster.chars);
+  if(!names.length){
+    box.innerHTML = '<p class="roster-empty">尚無人物登場</p>';
+    return;
+  }
+  const ordered = names.sort((a,b)=>{
+    if(a===roster.playerName) return -1;
+    if(b===roster.playerName) return 1;
+    return 0;
+  });
+  ordered.forEach(n=>{
+    const c = roster.chars[n];
+    const isPlayer = n === roster.playerName;
+    const tag = isPlayer ? "我的角色卡" : (c.relation ? "關係・" + c.relation : "人物");
+    box.appendChild(makeCard(c, isPlayer, tag));
+  });
+}
+function chipEl(m, extraClass){
+  const d = document.createElement("div");
+  d.className = "chip" + (extraClass?" "+extraClass:"") + (/歿/.test(String(m.note||""))?" dead":"");
+  d.innerHTML = '<span class="role"></span><div class="name"></div>' + (m.note?'<span class="cnote"></span>':'');
+  d.querySelector(".role").textContent = m.role || "親";
+  d.querySelector(".name").textContent = m.name || "—";
+  if(m.note) d.querySelector(".cnote").textContent = (m.age? m.age+"・":"") + m.note;
+  else if(m.age){ const s=document.createElement("span"); s.className="cnote"; s.textContent=m.age; d.appendChild(s); }
+  return d;
+}
+function buildFamilyTab(){
+  const box = $("rosterFamily");
+  box.innerHTML = "";
+  const fam = roster.family || [];
+  if(!fam.length){
+    box.innerHTML = '<p class="roster-empty">尚無家室記載<br><br>（成親、生兒育女後，族譜將自動記於此）</p>';
+    return;
+  }
+  const grp = { elder:[], parent:[], sibling:[], spouse:[], child:[], other:[] };
+  fam.forEach(m=>{
+    const r = String(m.role||"");
+    if(/祖/.test(r)) grp.elder.push(m);
+    else if(/^父$|^母$|父親|母親|爹|娘$/.test(r)) grp.parent.push(m);
+    else if(/兄|弟|姊|姐|妹/.test(r)) grp.sibling.push(m);
+    else if(/夫|妻|妾|婿|媳/.test(r)) grp.spouse.push(m);
+    else if(/子|女|嗣/.test(r)) grp.child.push(m);
+    else grp.other.push(m);
+  });
+  const tree = document.createElement("div");
+  tree.className = "tree";
+  function tier(label, arr, extra){
+    if(!arr.length) return;
+    if(tree.children.length){ const l=document.createElement("div"); l.className="link"; tree.appendChild(l); }
+    const lab = document.createElement("div"); lab.className="tier-label"; lab.textContent=label;
+    tree.appendChild(lab);
+    const t = document.createElement("div"); t.className="tier";
+    arr.forEach(m=>t.appendChild(chipEl(m, extra)));
+    tree.appendChild(t);
+  }
+  tier("祖　輩", grp.elder);
+  tier("父　母", grp.parent);
+  // 本人＋配偶同層
+  {
+    if(tree.children.length){ const l=document.createElement("div"); l.className="link"; tree.appendChild(l); }
+    const lab = document.createElement("div"); lab.className="tier-label"; lab.textContent="本人・配偶";
+    tree.appendChild(lab);
+    const t = document.createElement("div"); t.className="tier";
+    const meCard = roster.chars[roster.playerName] || {};
+    t.appendChild(chipEl({name: roster.playerName || "主角", role:"本人", age: meCard.age}, "me"));
+    grp.spouse.forEach(m=>t.appendChild(chipEl(m, "spouse")));
+    tree.appendChild(t);
+  }
+  tier("子　女", grp.child);
+  tier("兄弟姊妹", grp.sibling);
+  tier("其　他", grp.other);
+  box.appendChild(tree);
+}
+function openRoster(){
+  buildPeopleTab();
+  buildFamilyTab();
+  $("rosterPanel").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+}
+function closeRoster(){
+  $("rosterPanel").classList.add("hidden");
+  document.body.style.overflow = "";
+}
+$("peopleBtn").addEventListener("click", openRoster);
+$("rosterClose").addEventListener("click", closeRoster);
+document.querySelectorAll(".rtab").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".rtab").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    $("rosterPeople").classList.toggle("hidden", tab.dataset.tab!=="people");
+    $("rosterFamily").classList.toggle("hidden", tab.dataset.tab!=="family");
+  });
+});
 
 /* ================= 事件 ================= */
 if(HOSTED){
@@ -1308,6 +1547,7 @@ $("startBtn").addEventListener("click", ()=>{
   if(!readKeyOrFocus()) return;
   if(loadSave() && !window.confirm("已有存檔，開新局將覆蓋舊進度。確定？")) return;
   safeDel(SAVE_STORE);
+  resetRoster();
   Audio.unlock();
 
   const gender = segValue("gender");
